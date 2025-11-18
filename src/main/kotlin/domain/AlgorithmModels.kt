@@ -2,6 +2,14 @@ package com.example.domain
 
 import kotlinx.serialization.Serializable
 
+@Serializable
+data class AlgorithmResult(
+    val name: String,
+    val finalScore: Int,
+    val droppedByTime: Boolean,
+    val messages: List<String>
+)
+
 //
 // 시간 복잡도 수준 정의
 
@@ -27,5 +35,23 @@ fun timeLevelRank(level: TimeLevel): Int {
         TimeLevel.EXPONENTIAL -> 6
     }
 }
+
+//
+// 알고리즘 정보 / 점수 구조
+
+data class AlgorithmInfo(
+    val id: String,
+    val displayName: String,
+    val baseComplexity: TimeLevel,
+    val baseDescription: String
+)
+
+data class AlgorithmScore(
+    val info: AlgorithmInfo,
+    var score: Int = 0, // 디폴트 0
+    val reasons: MutableList<String> = mutableListOf(), // 리스트 생성
+    var droppedByTime: Boolean = false,
+    var timeReason: String? = null
+)
 
 
