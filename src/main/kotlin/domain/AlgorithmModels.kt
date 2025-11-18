@@ -1,6 +1,16 @@
 package com.example.domain
 
 import kotlinx.serialization.Serializable
+import java.sql.Time
+
+//
+// 요청 / 응답 모델
+
+@Serializable
+data class AnalyzeRequest( // 생성자
+    val text: String,
+    val maxN: Long? = null // null이 가능한것. default 값이 null이고, Long 아니면 null을 하는 것
+)
 
 @Serializable
 data class AlgorithmResult(
@@ -8,6 +18,15 @@ data class AlgorithmResult(
     val finalScore: Int,
     val droppedByTime: Boolean,
     val messages: List<String>
+)
+
+@Serializable
+data class AnalyzeResponse(
+    val allowedComplexity: String,
+    val allowedExplanation: String,
+    val recommendedAlgorithms: List<AlgorithmResult>,
+    val droppedAlgorithms: List<AlgorithmResult>,
+    val summary: String
 )
 
 //
