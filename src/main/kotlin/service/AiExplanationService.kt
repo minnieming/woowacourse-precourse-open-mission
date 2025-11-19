@@ -22,7 +22,11 @@ class AiExplanationService(
     // ✨ OpenAI에 HTTP 요청을 보내기 위한 Ktor 클라이언트
     private val client: HttpClient = HttpClient(CIO) {
         install(ContentNegotiation) {
-            json(Json { ignoreUnknownKeys = true })
+            json(
+                Json {
+                    ignoreUnknownKeys = true
+                }
+            )
         }
     }
 
@@ -104,6 +108,8 @@ class AiExplanationService(
     private fun buildFallbackExplanation(response: AnalyzeResponse): String {
         val sb = StringBuilder()
 
+        sb.appendLine("[기본 설명 - GPT 없이 생성됨]")
+        sb.appendLine()
         sb.appendLine("이 문제에 대한 알고리즘 추천 결과입니다.")
         sb.appendLine()
         sb.appendLine("허용되는 시간 복잡도: ${response.allowedComplexity}")
