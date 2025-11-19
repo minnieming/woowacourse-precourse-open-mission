@@ -26,7 +26,8 @@ data class AnalyzeResponse(
     val allowedExplanation: String,
     val recommendedAlgorithms: List<AlgorithmResult>,
     val droppedAlgorithms: List<AlgorithmResult>,
-    val summary: String
+    val summary: String,
+    val aiExplanation: String? = null
 )
 
 //

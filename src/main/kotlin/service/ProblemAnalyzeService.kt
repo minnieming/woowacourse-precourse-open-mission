@@ -9,6 +9,7 @@ import com.example.domain.TimeLevel
 import com.example.domain.timeLevelRank
 
 class ProblemAnalyzeService {
+    private val aiExplanationService = AiExplanationService()
     fun analyzeProblem(request: AnalyzeRequest): AnalyzeResponse{
         // 알고리즘 점수판 초기화
         val catalog = algorithmCatalog() // 결과 설명해주는 클래스
@@ -66,13 +67,18 @@ class ProblemAnalyzeService {
             summaryBuilder.appendLine("다음 알고리즘들은 시간 복잡도 때문에 제외되었습니다: $droppedNames")
         }
 
-        return AnalyzeResponse(
+        val baseResponse = AnalyzeResponse(
             allowedComplexity = allowedLevel.toString(),
             allowedExplanation = allowedExplanation,
             recommendedAlgorithms = recommended,
             droppedAlgorithms = dropped,
-            summary = summaryBuilder.toString()
+            summary = summaryBuilder.toString(),
+            aiExplanation = null
         )
+
+        val explanation = aiExplanationService?.buildExplanation(baseResponse)
+
+        return baseResponse.copy(aiExplanation = explanation)
     }
 
     // ==========================
