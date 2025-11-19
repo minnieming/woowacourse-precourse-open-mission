@@ -8,8 +8,9 @@ import com.example.domain.AnalyzeResponse
 import com.example.domain.TimeLevel
 import com.example.domain.timeLevelRank
 
-class ProblemAnalyzeService {
-    private val aiExplanationService = AiExplanationService()
+class ProblemAnalyzeService (
+    private val aiExplanationService: AiExplanationService? = null
+    ) {
     fun analyzeProblem(request: AnalyzeRequest): AnalyzeResponse{
         // 알고리즘 점수판 초기화
         val catalog = algorithmCatalog() // 결과 설명해주는 클래스
@@ -78,7 +79,11 @@ class ProblemAnalyzeService {
 
         val explanation = aiExplanationService?.buildExplanation(baseResponse)
 
-        return baseResponse.copy(aiExplanation = explanation)
+        return if (explanation != null) {
+            baseResponse.copy(aiExplanation = explanation)
+        } else {
+            baseResponse
+        }
     }
 
     // ==========================

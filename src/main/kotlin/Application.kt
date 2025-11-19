@@ -9,11 +9,15 @@ import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
+import com.example.service.AiExplanationService
 
 // 테스트와 실제 서버 둘 다에서 사용할 공용 설정
 fun Application.module() {
+    val aiExplanationService = AiExplanationService()
     // 서비스(비즈니스 로직) 생성
-    val analyzeService = ProblemAnalyzeService()
+    val analyzeService = ProblemAnalyzeService(
+        aiExplanationService = aiExplanationService
+    )
 
     // 컨트롤러 생성
     val analyzeController = ProblemAnalyzeController(analyzeService)
