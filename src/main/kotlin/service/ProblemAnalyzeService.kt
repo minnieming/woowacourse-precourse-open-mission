@@ -7,11 +7,15 @@ import com.example.domain.AnalyzeRequest
 import com.example.domain.AnalyzeResponse
 import com.example.domain.TimeLevel
 import com.example.domain.timeLevelRank
+import kotlinx.coroutines.runBlocking
 
-class ProblemAnalyzeService (
-    private val aiExplanationService: AiExplanationService? = null
-    ) {
-    fun analyzeProblem(request: AnalyzeRequest): AnalyzeResponse{
+// ✨ 여기: GPT 설명 + GPT 알고리즘 태그 서비스를 둘 다 받을 수 있게 생성자에 추가
+class ProblemAnalyzeService(
+    private val aiExplanationService: AiExplanationService? = null,
+    private val aiAlgorithmPredictService: AiAlgorithmPredictService = AiAlgorithmPredictService()
+) {
+
+    fun analyzeProblem(request: AnalyzeRequest): AnalyzeResponse {
         // 알고리즘 점수판 초기화
         val catalog = algorithmCatalog() // 결과 설명해주는 클래스
         val scoreMap = mutableMapOf<String, AlgorithmScore>()
@@ -25,7 +29,34 @@ class ProblemAnalyzeService (
         // N 기반 허용 시간 복잡도 추정
         val (allowedLevel, allowedExplanation) = estimateAllowedTimeLevel(request.maxN)
 
+        // 시간 복잡도 필터 적용
         applyTimeFilter(allowedLevel, scoreMap)
+
+        // ==========================
+        // 2단계: GPT 기반 알고리즘 태그 점수 반영
+        // ==========================
+        val gptTags: List<String> = try {
+            runBlocking {
+                aiAlgorithmPredictService.predictAlgorithms(request.text)
+            }
+        } catch (e: Exception) {
+            emptyList()
+        }
+
+        for (tag in gptTags) {
+            val lowerTag = tag.lowercase()
+
+            // displayName에 태그 문자열이 들어가면 매칭된 걸로 간주
+            val matchedAlgorithms = scoreMap.values.filter { algoScore ->
+                val name = algoScore.info.displayName.lowercase()
+                name.contains(lowerTag) || lowerTag.contains(name)
+            }
+
+            matchedAlgorithms.forEach { algoScore ->
+                algoScore.score += 3  // GPT 추천 보너스 점수
+                algoScore.reasons.add("GPT 분석 결과, 이 문제에서 사용할 후보 알고리즘으로 추천되었습니다. (태그: $tag)")
+            }
+        }
 
         // 5) 점수 기준으로 정렬 및 결과 가공
         val sorted = scoreMap.values.sortedByDescending { it.score }
@@ -77,6 +108,7 @@ class ProblemAnalyzeService (
             aiExplanation = null
         )
 
+        // GPT 설명 서비스가 주입되어 있으면 설명 생성
         val explanation = aiExplanationService?.buildExplanation(baseResponse)
 
         return if (explanation != null) {
@@ -165,7 +197,7 @@ class ProblemAnalyzeService (
         }
 
         // 최소 신장 트리 / 네트워크 비용 / 연결 비용 최소 → MST
-        if (lower.contains("최소 신장") || lower.contains("스패닝 트리") || lower.contains("네트워크") && lower.contains("최소 비용")) {
+        if (lower.contains("최소 신장") || lower.contains("스패닝 트리") || (lower.contains("네트워크") && lower.contains("최소 비용"))) {
             scores["mst_kruskal"]?.let { algo ->
                 algo.score += 3
                 algo.reasons.add("간선을 정렬해서 연결 비용을 최소화하는 Kruskal MST가 대표적인 해결법입니다.")
@@ -239,7 +271,7 @@ class ProblemAnalyzeService (
         }
 
         // "우선순위 큐" / "가장 작은 값" 반복 추출 / "힙"
-        if (lower.contains("우선순위 큐") || lower.contains("가장 작은 값") && lower.contains("반복") || lower.contains("heap")) {
+        if (lower.contains("우선순위 큐") || (lower.contains("가장 작은 값") && lower.contains("반복")) || lower.contains("heap")) {
             scores["heap"]?.let { algo ->
                 algo.score += 4
                 algo.reasons.add("가장 작은/큰 값을 반복해서 뽑는 상황에서는 힙(우선순위 큐)를 사용하는 것이 일반적입니다.")
@@ -255,7 +287,7 @@ class ProblemAnalyzeService (
         }
 
         // "위상 정렬" / "선수 과목" / "선행 작업"
-        if (lower.contains("위상 정렬") || lower.contains("선수 과목") || lower.contains("선행") && lower.contains("작업")) {
+        if (lower.contains("위상 정렬") || lower.contains("선수 과목") || (lower.contains("선행") && lower.contains("작업"))) {
             scores["topological_sort"]?.let { algo ->
                 algo.score += 5
                 algo.reasons.add("선후 관계가 있는 작업들의 순서를 구하는 전형적인 위상 정렬 문제입니다.")
@@ -263,7 +295,7 @@ class ProblemAnalyzeService (
         }
 
         // "동적 계획법", "DP"
-        if (lower.contains("동적 계획법") || lower.contains("DP ") || lower.contains("dynamic programming")) {
+        if (lower.contains("동적 계획법") || lower.contains("dp ") || lower.contains("dynamic programming")) {
             scores["dp_1d"]?.let { algo ->
                 algo.score += 5
                 algo.reasons.add("문제에서 동적 계획법을 직접 언급하고 있습니다.")
@@ -287,7 +319,8 @@ class ProblemAnalyzeService (
             if (algoRank > allowedRank) {
                 // 이 알고리즘은 이 문제의 N에서 쓰기에는 너무 느리다
                 algoScore.droppedByTime = true
-                val msg = "이 문제의 입력 크기에서는 ${algoScore.info.baseComplexity} 수준의 알고리즘은 시간 초과 위험이 커서 제외했습니다."
+                val msg =
+                    "이 문제의 입력 크기에서는 ${algoScore.info.baseComplexity} 수준의 알고리즘은 시간 초과 위험이 커서 제외했습니다."
                 algoScore.timeReason = msg
                 algoScore.score -= 10
                 algoScore.reasons.add(msg)
@@ -299,5 +332,3 @@ class ProblemAnalyzeService (
         }
     }
 }
-
-
