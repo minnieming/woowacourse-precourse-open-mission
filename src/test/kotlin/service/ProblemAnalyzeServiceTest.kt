@@ -6,7 +6,10 @@ import org.junit.jupiter.api.Test
 
 class ProblemAnalyzeServiceTest {
 
-    private val service = ProblemAnalyzeService()
+    // ✨ aiExplanationService를 함께 주입
+    private val service = ProblemAnalyzeService(
+        aiExplanationService = AiExplanationService(apiKey = "")  // 키는 비워두고 fallback만 사용
+    )
 
     @Test
     fun `숫자 야구 문제에서는 브루트포스 계열 알고리즘이 후보에 올라온다`() {
