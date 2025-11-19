@@ -130,4 +130,30 @@ class ProblemAnalyzeServiceTest {
             )
         }
     }
+
+    // ai
+    @Test
+    fun `숫자 야구 문제에서는 aiExplanation이 생성된다`() {
+        // given
+        val text = """
+            당신은 숫자 야구를 플레이하는 프로그램을 작성해야 합니다.
+            숫자 야구란 1 ~ 9 사이의 서로 다른 숫자 4개로 이루어진 비밀번호를 맞히는 게임입니다.
+            비밀번호를 맞히는 것이 목표입니다.
+        """.trimIndent()
+
+        val request = AnalyzeRequest(
+            text = text,
+            maxN = 1000
+        )
+
+        // when
+        val response = service.analyzeProblem(request)
+
+        // then
+        assertNotNull(response.aiExplanation, "aiExplanation은 null이면 안 됩니다.")
+        assertTrue(
+            response.aiExplanation!!.contains("허용되는 시간 복잡도"),
+            "aiExplanation 안에 기본 설명 문구가 포함되어야 합니다."
+        )
+    }
 }
