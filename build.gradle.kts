@@ -26,6 +26,12 @@ dependencies {
     testImplementation(libs.junit.jupiter)
     testImplementation("io.ktor:ktor-client-content-negotiation:3.3.1")
     testImplementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
+
+    // gpt 호출
+    implementation("io.ktor:ktor-client-core:3.3.1")
+    implementation("io.ktor:ktor-client-cio:3.3.1")
+    implementation("io.ktor:ktor-client-content-negotiation:3.3.1")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:3.3.1")
 }
 
 tasks.test {
