@@ -1,18 +1,24 @@
 package com.example
 
 import com.example.controller.ProblemAnalyzeController
+import com.example.service.AiExplanationService
 import com.example.service.ProblemAnalyzeService
 import io.ktor.serialization.kotlinx.json.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.plugins.cors.routing.*
+import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import kotlinx.serialization.json.Json
-import com.example.service.AiExplanationService
 
 // 테스트와 실제 서버 둘 다에서 사용할 공용 설정
 fun Application.module() {
+    install(CORS) {
+        allowHost("localhost:5173")
+        allowHeader(io.ktor.http.HttpHeaders.ContentType)
+    }
     val aiExplanationService = AiExplanationService()
     // 서비스(비즈니스 로직) 생성
     val analyzeService = ProblemAnalyzeService(
@@ -34,6 +40,11 @@ fun Application.module() {
     routing {
         // 컨트롤러에 라우팅 등록 위임
         analyzeController.register(this)
+
+        // Vue.js 프론트엔드 테스트용 API
+        get("/api/hello") {
+            call.respondText("Hello from Ktor! 👋")
+        }
     }
 }
 
